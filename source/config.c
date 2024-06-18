@@ -102,6 +102,7 @@ VCHT
 
 
 int saveing = 0; // my mutex flag thing
+int loading = 0;
   
 int save_thread(SceSize args, void *argp) { 
   #ifdef LOG
@@ -367,11 +368,36 @@ int create_config(const Menu_pack *menu_list, int menu_max) {
   return 0; // success
 }
 
-
-int load_config(const Menu_pack *menu_list, int menu_max) { // loads menu defaults if config value not found (do we want that?)
-  #ifdef LOG  
-  logPrintf("[CONFIG] load_config()");
+int load_config(const Menu_pack *menu_list, int menu_max) {
+  #ifdef LOG
+  logPrintf("[INFO] %i: load_config(%s)", getGametime(), config);
   #endif
+  
+  ///////////////////////
+  if( loading == 0 ) { // only start thread if not running already
+    SceUID thid = sceKernelCreateThread("load_thread", load_thread, 0x18, 0x10000, PSP_THREAD_ATTR_USER, NULL);
+    if( thid < 0 ) {
+      #ifdef LOG
+      logPrintf("[INFO] Error, could not create thread 0x%08X\n", thid);
+      #endif  
+      //sceKernelSleepThread(); // TODO ?
+      return thid;
+    }
+    loading = 1;
+    sceKernelStartThread(thid, 0, NULL);
+  }
+  ///////////////////////
+  
+  return 0; //done
+}
+
+int load_thread(SceSize args, void *argp) { // loads menu defaults if config value not found (do we want that?)
+  #ifdef LOG  
+  logPrintf("[CONFIG] load_thread()");
+  #endif
+
+  const Menu_pack *menu_list = main_menu;
+  int menu_max = menu_size;
   
   char tempfig[256];
   sprintf(tempfig, "%s_", config);  
@@ -381,6 +407,8 @@ int load_config(const Menu_pack *menu_list, int menu_max) { // loads menu defaul
     #endif
     sceIoRemove(tempfig);
     sceIoRemove(config);
+    loading = 0;
+    sceKernelExitDeleteThread(0);
     return -1;
   }
   
@@ -393,6 +421,8 @@ int load_config(const Menu_pack *menu_list, int menu_max) { // loads menu defaul
     #ifdef LOG  
     logPrintf("[ERROR] sceIoOpen(%s) error 0x%08X", config, file);
     #endif
+    loading = 0;
+    sceKernelExitDeleteThread(0);
     return -1; // error
   }
 
@@ -444,7 +474,7 @@ int load_config(const Menu_pack *menu_list, int menu_max) { // loads menu defaul
     }
   } 
   #ifdef LOG  
-  logPrintf("[CONFIG] load_config -> menu loop done");
+  logPrintf("[CONFIG] load_thread -> menu loop done");
   #endif
 
   #ifdef ACHIEVEMENTS
@@ -468,10 +498,10 @@ int load_config(const Menu_pack *menu_list, int menu_max) { // loads menu defaul
   #endif
 
   /// Editor stuff --> files get too big to handle on PSP.. scrap all this :(
-  /*if( flag_use_advaconfig && gametimer > 0) { // gametime excludes load_config called right after gameboot
+  /*if( flag_use_advaconfig && gametimer > 0) { // gametime excludes load_thread called right after gameboot
    
     #ifdef LOG  
-    logPrintf("[CONFIG] load_config -> advanced block");
+    logPrintf("[CONFIG] load_thread -> advanced block");
     #endif
 
     ***********************************************************************************************
@@ -517,6 +547,9 @@ int load_config(const Menu_pack *menu_list, int menu_max) { // loads menu defaul
   #ifdef LOG  
   logPrintf("[CONFIG] all done");
   #endif
+
+  loading = 0;
+  sceKernelExitDeleteThread(0);
   
   return 0; // success
 }

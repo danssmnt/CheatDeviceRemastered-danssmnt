@@ -143,7 +143,7 @@ char config[128];
 #endif
 char category_index[CAT_COUNTER]; // 1 = visible/expanded/enabled (init by module_start & taken care of by menu_setDefaults)
 SceCtrlData pad;
-int hold_n = 0;
+float hold_n = 0.0f;
 u32 old_buttons = 0, current_buttons = 0, pressed_buttons = 0, hold_buttons = 0, lx, ly, rx, ry;
 float xstick, ystick, xstick_, ystick_;
 int hex_adr = -1; // mem address for HexEditor
@@ -5255,11 +5255,14 @@ void draw() { // called by hijacked game function
   
   
   /// Config saveing
-  #ifdef DEBUG
   extern int saveing;
   if( saveing )
-    drawString("Saving config..", ALIGN_FREE, FONT_DIALOG, SIZE_NORMAL, SHADOW_OFF, 18.0f, 15.0f, WHITE);
-  #endif
+    drawString("Saving config...", ALIGN_FREE, FONT_DIALOG, SIZE_NORMAL, SHADOW_ON, 280.0f, 5.0f, LIGHTBLUE);
+
+  /// Config loading
+  extern int loading;
+  if( loading )
+    drawString("Loading config...", ALIGN_FREE, FONT_DIALOG, SIZE_NORMAL, SHADOW_ON, 280.0f, 5.0f, LIGHTBLUE);
   
   
   /// Coordinates (when enabled)
@@ -5328,6 +5331,8 @@ pressed_buttons = "on button down"
 hold_buttons    = for scrolling
 **/
 
+float time_holding = 0.3f;
+
 void buttonInput() { // called by hijacked game function
   sceCtrlPeekBufferPositive(&pad, 1);
     
@@ -5368,11 +5373,15 @@ void buttonInput() { // called by hijacked game function
   hold_buttons = pressed_buttons;
 
   if( old_buttons & current_buttons ) {
-    if( hold_n >= 10 ) {
+    // The navigation can get really slow on framerates < 20
+    if( hold_n >= time_holding ) {
+
       hold_buttons = current_buttons;
-      hold_n = 8;
-    } hold_n++;
-  } else hold_n = 0;
+      hold_n = time_holding*0.8f;
+
+    } hold_n += 1.0f * delta_time;
+
+  } else hold_n = 0.0f;
 
   if( flag_menu_running ) { // menu is open
                 

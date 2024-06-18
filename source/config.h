@@ -19,8 +19,12 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+extern int saveing;
+extern int loading;
+
 
 int save_config(const Menu_pack *menu_list, int menu_max);
+int load_thread(SceSize args, void *argp);
 int load_config(const Menu_pack *menu_list, int menu_max);
 int create_config(const Menu_pack *menu_list, int menu_max);
 

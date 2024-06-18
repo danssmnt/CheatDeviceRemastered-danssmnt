@@ -39,15 +39,7 @@ int logPrintf(const char *text, ...) {
   vsprintf(string, text, list);
   va_end(list);
 
-  char buffer[128];
-  snprintf(buffer, sizeof(buffer), "%s%s", basefolder, file_log);
-
-  SceUID fd = sceIoOpen(buffer, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_APPEND, 0777);
-  if( fd >= 0 ) {
-    sceIoWrite(fd, string, strlen(string));
-    sceIoWrite(fd, "\n", 1);
-    sceIoClose(fd);
-  }
+  sceKernelPrintf(string);
    
   return 0;
 }

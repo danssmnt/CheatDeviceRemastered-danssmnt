@@ -22,10 +22,10 @@
 
 /** FEATURE-FLAGS *****************************************************************************************************/
 
-//#define DEBUG // Debug mode  ("Debug" watermark, extra monitor, options etc)
+#define DEBUG // Debug mode  ("Debug" watermark, extra monitor, options etc)
 //#define PREVIEW // Preview mode ("Preview" watermark, WIP cheats & custom spawn-teleport etc)
 
-//#define LOG // logging to logfile
+#define LOG // logging to logfile
 //#define MEMLOG // logging bad memory access to logfile
 //#define PATCHLOG // debug logging for detected patch locations only
 //#define USERSCRIPTLOG // debug logging for userscripts only
@@ -49,6 +49,11 @@
 
 
 /**********************************************************************************************************************/
+
+// VS Code is trash
+typedef unsigned int uint;
+typedef unsigned short ushort;
+#define M_PI 3.14159265358979323846
 
 enum {
   OFF, // 0

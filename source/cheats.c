@@ -31,6 +31,7 @@
 #include "editor.h"
 #include "utils.h"
 #include "blitn.h"
+#include "config.h"
 
 register int gp asm("gp"); // for VCS
 int gp_ = 0; // helper (also used in configs extern)
@@ -3980,6 +3981,7 @@ void drawMemoryUsage() {
 SceInt64 cur_micros = 0, delta_micros = 0, last_micros = 0;
 u32 frames = 0;
 float fps = 0.0f;
+float delta_time = 0.0f;
 int memory_main_free = 0;
 
 SceInt64 sceKernelGetSystemTimeWidePatched(void) { // LCS & VCS
@@ -3988,6 +3990,7 @@ SceInt64 sceKernelGetSystemTimeWidePatched(void) { // LCS & VCS
     delta_micros = cur_micros - last_micros;
     last_micros = cur_micros;
     fps = (frames / (double)delta_micros) * 1000000.0f;
+    delta_time = 1 / fps;
     frames = 0;
   } frames++;
   
@@ -4412,6 +4415,7 @@ void achievements() {
 #endif
 
 int buttonsToActionPatched(void *a1) { // LCS & VCS
+  if (loading || saveing) return NULL;
   int res = buttonsToAction(a1);
 
   //((short *)a1)[5] = 0xFF;   // Simulate L trigger

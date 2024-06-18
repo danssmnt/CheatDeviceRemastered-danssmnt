@@ -65,6 +65,9 @@ typedef struct {
 /// Calls 
 SceInt64 sceKernelGetSystemTimeWidePatched(void);
 
+extern float fps;
+extern float delta_time;
+
 int (* GetPPLAYER)();
 int (* GetPOBJ)();
 int (* GetPCAR)();
