@@ -60,35 +60,75 @@ int logPrintf(const char *text, ...) {
 }
 
 // NOTE: You can't verify folders by using this function on Android (sceIoOpen returns 3 on folders for some reason)
-int doesFileExist(const char* path) {
-  SceUID dir = sceIoOpen(path, PSP_O_RDONLY, 0777);
-  if( dir >= 0 ) {
-    sceIoClose(dir);
-    #ifdef LOG
-    logPrintf("[INFO] doesFileExist('%s') -> yes", path);
-    #endif   
-    return 1; // true
-  }
-  #ifdef LOG
-  logPrintf("[INFO] doesFileExist('%s') -> no", path);
-  #endif 
-  return 0; // false
-} 
+// int doesFileExist(const char* path) {
+//   SceUID dir = sceIoOpen(path, PSP_O_RDONLY, 0777);
+//   if( dir >= 0 ) {
+//     sceIoClose(dir);
+//     #ifdef LOG
+//     logPrintf("[INFO] doesFileExist('%s') -> yes", path);
+//     #endif   
+//     return 1; // true
+//   }
+//   #ifdef LOG
+//   logPrintf("[INFO] doesFileExist('%s') -> no", path);
+//   #endif 
+//   return 0; // false
+// }
 
-int doesDirExist(const char* path) {
-  SceUID dir = sceIoDopen(path); 
-  if( dir >= 0 ) {
-    sceIoDclose(dir); 
+// int doesDirExist(const char* path) {
+//   SceUID dir = sceIoDopen(path); 
+//   if( dir >= 0 ) {
+//     sceIoDclose(dir); 
+//     #ifdef LOG
+//     logPrintf("[INFO] doesDirExist('%s') -> yes", path);
+//     #endif 
+//   return 1; // true
+//   }
+//   #ifdef LOG
+//   logPrintf("[INFO] doesDirExist('%s') -> no", path);
+//   #endif 
+//   return 0; // false
+// } 
+
+// Use iostat (which is way faster and reliable) instead of opening and closing files
+int doesFileExist(const char* path)
+{
+  SceIoStat stat = {0};
+  
+  if ( sceIoGetstat(path, &stat) < 0 )
+  {
     #ifdef LOG
-    logPrintf("[INFO] doesDirExist('%s') -> yes", path);
-    #endif 
-  return 1; // true
+      logPrintf("[INFO] doesFileExist('%s') -> no", path);
+    #endif
+    return 0;
   }
+
   #ifdef LOG
-  logPrintf("[INFO] doesDirExist('%s') -> no", path);
-  #endif 
-  return 0; // false
-} 
+    logPrintf("[INFO] doesFileExist('%s') -> %s", path, FIO_SO_ISREG(stat.st_attr) ? "yes" : "no");
+  #endif
+
+  return FIO_SO_ISREG(stat.st_attr);
+}
+
+// Use iostat (which is way faster and reliable) instead of opening and closing dirs
+int doesDirExist(const char* path)
+{
+  SceIoStat stat = {0};
+  
+  if ( sceIoGetstat(path, &stat) < 0 )
+  {
+    #ifdef LOG
+      logPrintf("[INFO] doesDirExist('%s') -> no", path);
+    #endif
+    return 0;
+  }
+
+  #ifdef LOG
+    logPrintf("[INFO] doesDirExist('%s') -> %s", path, FIO_SO_ISDIR(stat.st_attr) ? "yes" : "no");
+  #endif
+
+  return FIO_SO_ISDIR(stat.st_attr);
+}
 
 int countFilesInFolder(const char *path) {
   int file_count = 0;
@@ -320,8 +360,8 @@ int getHighMemBound() { // thx Acid_Snake :)
   //  One to force it into p2 (the user partition)
   
   
-  SceUID block = sceKernelAllocPartitionMemory(2, "test", PSP_SMEM_High, 100, NULL);
-  int address = (int)sceKernelGetBlockHeadAddr(block)+0x100; // highest address is not calculated precisely this way either but it gives a rough idea
+  SceUID block = sceKernelAllocPartitionMemory(PSP_MEMORY_PARTITION_USER, "test", PSP_SMEM_High, 0x100, NULL);
+  int address = (int)sceKernelGetBlockHeadAddr(block) + 0x100; // highest address is not calculated precisely this way either but it gives a rough idea
   sceKernelFreePartitionMemory(block);
   
   
@@ -357,24 +397,8 @@ void getSizeString(char string[16], uint64_t size) {
   snprintf(string, 16, "%.*f %s", (i == 0) ? 0 : 2, double_size, units[i]);
 }
 
-// Convert a string to a lowercase string
-char* string_to_lower(char* c) {
-  if ( c == NULL ) return NULL;
-
-  size_t i;
-  size_t c_length = strlen(c);
-
-  for ( i = 0; i < c_length; i++ ) {
-    if ( isupper(c[i]) ) {
-      c[i] = tolower(c[i]);
-    }
-  }
-
-  return c;
-}
-
 // Check if filename (or path) ends with extension
-int fileEndsWithExtension(char *filename, char* extension) {
-  // sometimes filenames are uppercase (for some reason idk)
-  return strcmp(string_to_lower(filename) + strlen(filename) - strlen(extension), string_to_lower(extension)) == 0;
+int fileEndsWithExtension(const char *filename, const char* extension) 
+{
+  return !strcasecmp(filename + strlen(filename) - strlen(extension), extension);
 }
