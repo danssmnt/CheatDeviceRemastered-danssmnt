@@ -2153,8 +2153,8 @@ char *empire_state_name(int val) {
  switch(val) {
     case 0: return getGxtTranslation("PROPST1"); // "Normal";
     case 1: return getGxtTranslation("PROPST2"); // "For Sale"
-    case 2: return "?";
-    case 3: return "Under Attack"; // getGxtTranslation("PROPST3"); // = "Damaged"
+    case 2: return "?"; // getGxtTranslation("PROPST3"); // "Damaged"
+    case 3: return getGxtTranslation("PROPST4"); // "Under Attack"
     case 4: return "Locked";
     case 5: return "Under Construction";
     default: return "Unknown";
